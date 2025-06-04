@@ -1,58 +1,88 @@
-# Terraform – Erste Schritte
+# Terraform – Nginx Deployment mit Variablen, Outputs und Provisioner
 
-Dies ist die Abgabe zur Aufgabe **"Erste Schritte mit Terraform: Provider und Ressourcen definieren & planen"**.  
+Dies ist die Abgabe zur Aufgabe **"Terraform Workflow abschließen & Konfiguration flexibel machen"**.  
 Die Terraform-Konfiguration befindet sich im Ordner:  
 `terraform/first-steps/`
 
 ## Inhalt
 
-- Definition eines Docker Providers (kreuzwerker/docker)
-- Erstellung von zwei Ressourcen:
-  - Einem `docker_image` (nginx:latest)
-  - Einem `docker_container` (basierend auf dem Image)
-- Durchführung der Befehle `terraform init` und `terraform plan`
-- Screenshots der Ausgaben
+- Verwendung des Docker Providers (`kreuzwerker/docker`)
+- Erstellung eines Nginx-Containers mit dynamischem HTML-Inhalt
+- Nutzung von Variablen (`variables.tf`) und Outputs (`outputs.tf`)
+- Konfigurierbar über `.tfvars` oder CLI
+- HTML-Inhalt wird über `local-exec` Provisioner in den Container geschrieben
+- Kompletter Terraform-Workflow: `init`, `plan`, `apply`, `destroy`
 
 ## Screenshots
 
 ### `terraform init`
 
-![terraform init Output](./screenshots/init.png)
+![terraform init](./screenshots/init.png)
 
 ### `terraform plan` (erste Hälfte)
 
-![terraform plan erste Hälfte](./screenshots/plan1.png)
+![terraform plan 1](./screenshots/plan1.png)
 
 ### `terraform plan` (zweite Hälfte)
 
-![terraform plan zweite Hälfte](./screenshots/plan2.png)
+![terraform plan 2](./screenshots/plan2.png)
+
+### `terraform apply`
+
+![terraform apply](./screenshots/apply.png)
+
+### Browseransicht (`http://localhost:8888`)
+
+![browser output](./screenshots/browser.png)
+
+### `terraform destroy`
+
+![terraform destroy](./screenshots/destroy.png)
+
+## Variablen (test.tfvars Beispiel)
+
+```hcl
+container_name     = "my-test-container"
+external_port      = 8888
+nginx_html_content = "<h1>Test Umgebung</h1><p>Dieser Inhalt kommt aus der test.tfvars Datei.</p>"
+```
+
+## Ausführung
+```bash
+terraform init
+terraform plan -var-file="test.tfvars"
+terraform apply -var-file="test.tfvars"
+terraform destroy -var-file="test.tfvars"
+```
 
 ## Reflexionsfragen
 
-### Was ist die Rolle des provider Blocks in deiner Konfiguration?  
-Der Provider definiert, wie Terraform mit der Plattform (hier Docker) kommuniziert.
+### Was hat der Befehl terraform apply getan, als du ihn zum ersten Mal mit deiner initialen Konfiguration (ohne Variablen) ausgeführt hast?
+Er hat den Container erstellt und den Zustand in der terraform.tfstate gespeichert.
 
-### Warum ist er notwendig?  
-Er stellt die Verbindung her und ermöglicht Terraform, Ressourcen zu verwalten.
+### Was ist mit dem Terraform State (terraform.tfstate) passiert, nachdem du terraform apply und terraform destroy ausgeführt hast?
+Nach apply wurde der aktuelle Zustand (Container existiert) gespeichert. Nach destroy wurde der Container entfernt und der State entsprechend aktualisiert.
 
-### Was ist die Rolle des resource Blocks?  
-Er beschreibt, welche Ressourcen Terraform erstellen oder verwalten soll.
+### Wie haben die Variablen (variable {}, var.) deine Konfiguration flexibler und wiederverwendbarer gemacht, verglichen mit der initialen Konfiguration (ohne Variablen)?
+Die Konfiguration kann jetzt wiederverwendet werden, ohne manuell Dateien zu ändern – Werte wie Port, Name oder HTML-Inhalt lassen sich dynamisch setzen.
 
-### Was repräsentiert er im Vergleich zu einem provider?  
-Provider = Verbindung, Resource = Objekt, das erstellt wird.
+### Auf welche drei Arten hast du Werte an deine Input-Variablen übergeben?  
+Beschreibe kurz die Methode und ihre Priorität.
+- Standardwerte in `variables.tf`
+- `.tfvars` Datei (z. B. `test.tfvars`)
+- Direkt über das CLI-Flag `-var`
 
-### Wie hast du in deiner Konfiguration eine implizite Abhängigkeit zwischen der docker_container Ressource und der docker_image Ressource erstellt?  
-Durch die Referenz: `image = docker_image.nginx_image.name`.
+**Priorität:** CLI > .tfvars > Default
 
-### Warum ist es wichtig, dass Terraform diese Abhängigkeit versteht?  
-Damit die Ressourcen in der richtigen Reihenfolge erstellt werden.
+### Was zeigen die Outputs (`output {}`, `terraform output`) an, nachdem du apply ausgeführt hast? Wofür sind sie nützlich?
+Sie zeigen die konfigurierten Werte wie den Containernamen, den externen Port und den final verwendeten HTML-Inhalt. Das hilft beim Nachvollziehen und bei der automatisierten Weiterverwendung.
 
-### Was genau bewirkt der Befehl terraform init, wenn du ihn zum ersten Mal in einem Verzeichnis ausführst?  
-Er lädt benötigte Provider-Plugins und erstellt die `.terraform`-Struktur.
+### Wie hast du den Inhalt der Variable `nginx_html_content` in die `index.html` Datei im laufenden Docker-Container bekommen? Welche Terraform-Funktion (Provisioner) wurde dafür genutzt?
+Mit einem `local-exec` Provisioner, der ein Bash-Kommando (`docker exec`) ausführt und den HTML-Text über `echo` in eine Datei im Container schreibt.
 
-### Was genau zeigt der Output von terraform plan an?  
-Er zeigt, welche Änderungen Terraform vornehmen würde, ohne sie tatsächlich auszuführen.
+
 
 ## Hinweise
 
 - `.terraform/` und `terraform.tfstate` sind per `.gitignore` ausgeschlossen.
+- `test.tfvars` enthält keine sensiblen Daten und ist im Repo enthalten.

@@ -1,3 +1,19 @@
-.terraform/
+# Terraform state
 terraform.tfstate
 terraform.tfstate.backup
+
+# Terraform working directory
+.terraform/
+
+# Crash logs
+crash.log
+crash.*.log
+
+# IDEs/Editoren (optional, aber sinnvoll)
+.vscode/
+.idea/
+
+# macOS / Windows system files (optional)
+.DS_Store
+Thumbs.db
+
